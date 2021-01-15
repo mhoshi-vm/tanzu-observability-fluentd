@@ -1,5 +1,6 @@
+
 provider "wavefront" {
-  address = "https://vmware.wavefront.com"
+  address = "vmware.wavefront.com"
   token = "fea4e2f4-03f9-4119-adad-c4c0ba9b2034"
 }
 
@@ -14,7 +15,10 @@ resource "wavefront_dashboard" "kubernetes_log" {
       hide_from_view = false
       parameter_type = "DYNAMIC"
       query_value = "collect(max(ts(\"kubernetes.cluster.cpu.limit\"), cluster), taggify(1, cluster, \"*\"))"
-      dynamic_field_type = "POINT_TAG"
+      dynamic_field_type = "SOURCE_TAG"
+      values_to_readable_strings = {
+           Label = "*"
+      }
    }
    section {
      name = "Standard Out"
@@ -23,9 +27,10 @@ resource "wavefront_dashboard" "kubernetes_log" {
             name = "Top STDOUT logs"
             description = "Top STDOUT logs"
             units = "Top STDOUT logs"
+            summarization = "MEAN"
             source {
               name = "stdout"
-              query = "limit(30, highpass(0, round(at('end',msum(1vw, rawsum(ts('kubernetes.container.logs.stdout.counter' , cluster=\"${cluster_name}\"),pod))))))"
+              query = "limit(30, highpass(0, round(at('end',msum(1vw, rawsum(ts('kubernetes.container.logs.stdout.counter' , cluster=\"$${cluster_name}\"),pod))))))"
             }
             chart_setting {
                 type = "top-k"
@@ -35,9 +40,10 @@ resource "wavefront_dashboard" "kubernetes_log" {
             name = "STDOUT logs per miniute"
             description = "STDOUT logs per miniute"
             units = "STDOUT logs per miniute"
+            summarization = "MEAN"
             source {
               name = "stdout"
-              query = "mdiff(1m,ts(\"kubernetes.container.logs.stdout.counter\", cluster=\"${cluster_name}\" ))"
+              query = "mdiff(1m,ts(\"kubernetes.container.logs.stdout.counter\", cluster=\"$${cluster_name}\" ))"
             }
             chart_setting {
                 type = "line"
@@ -51,9 +57,11 @@ resource "wavefront_dashboard" "kubernetes_log" {
          chart {
             name = "Top STDERR logs"
             description = "Top STDERR logs"
+            units = "Top STDERR logs"
+            summarization = "MEAN"
             source {
               name = "stdout"
-              query = "limit(30, highpass(0, round(at('end',msum(1vw, rawsum(ts(\"kubernetes.container.logs.stderr.counter\" , cluster=\"${cluster_name}\"),pod))))))"
+              query = "limit(30, highpass(0, round(at('end',msum(1vw, rawsum(ts(\"kubernetes.container.logs.stderr.counter\" , cluster=\"$${cluster_name}\"),pod))))))"
             }
             chart_setting {
                 type = "top-k"
@@ -63,9 +71,10 @@ resource "wavefront_dashboard" "kubernetes_log" {
             name = "STDERR logs per miniute"
             description = "STDERR logs per miniute"
             units = "STDERR logs per miniute"
+            summarization = "MEAN"
             source {
               name = "stdout"
-              query = "mdiff(1m,ts(\"kubernetes.container.logs.stderr.counter\", cluster=\"${cluster_name}\" ))"
+              query = "mdiff(1m,ts(\"kubernetes.container.logs.stderr.counter\", cluster=\"$${cluster_name}\" ))"
             }
             chart_setting {
                 type = "line"
@@ -73,4 +82,7 @@ resource "wavefront_dashboard" "kubernetes_log" {
          }
      }
    }
+   tags = [
+     "terraform"
+   ]
 }
