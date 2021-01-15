@@ -3,6 +3,9 @@ image:
 
 forwarder:
   configMap: to-fluentd
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    effect: NoSchedule
   containerPorts:
   - name: http
     containerPort: 9880
